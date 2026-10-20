@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Lovely</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pink:#ff5c8a; --pink-soft:#ffb3c6; --pink-pale:#ffd6e0; --brown:#8a4b5a;
+  --glass:rgba(255,255,255,.62);
+  --font:"Baloo 2","Quicksand","Nunito",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;overflow:hidden;font-family:var(--font);color:var(--brown);
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;}
+body{background:linear-gradient(160deg,#ffe3ea 0%,#ffc9d6 100%);}
+/* Ánh sáng mờ ở giữa màn hình */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.75) 0%,rgba(255,255,255,0) 55%);}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px;z-index:2;opacity:0;visibility:hidden;transition:opacity .8s ease,visibility .8s;}
+.screen.show{opacity:1;visibility:visible;}
+
+.glass{background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.8);border-radius:32px;box-shadow:0 12px 40px rgba(255,92,138,.18);}
+h1,h2{color:var(--pink);font-weight:800;margin:0;}
+
+/* ---------- Màn 1: vân tay (ấn giữ để mở quà) ---------- */
+#lockBox{width:min(340px,92vw);padding:30px 24px 30px;text-align:center;}
+#lockBox h1{font-size:28px;}
+#lockSub{margin:2px 0 0;font-size:16px;font-weight:600;color:var(--pink);opacity:.75;}
+.fp{position:relative;display:block;width:150px;height:150px;margin:34px auto 6px;padding:0;border:0;background:none;
+  cursor:pointer;touch-action:none;-webkit-touch-callout:none;outline:none;}
+.fp .halo{position:absolute;inset:-18px;border-radius:50%;background:radial-gradient(circle,rgba(255,92,138,.38),rgba(255,92,138,0) 70%);
+  animation:halo 2.4s ease-in-out infinite;transition:transform .4s;}
+@keyframes halo{0%,100%{transform:scale(.92);opacity:.6}50%{transform:scale(1.08);opacity:1}}
+.fp .disc{position:absolute;inset:0;border-radius:50%;background:#fff;box-shadow:0 8px 22px rgba(255,92,138,.3),inset 0 0 0 6px var(--pink-pale);
+  transition:transform .2s,background .4s;}
+.fp .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);pointer-events:none;overflow:visible;}
+.fp .bar{fill:none;stroke:var(--pink);stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(255,92,138,.7));}
+.fp .icon{position:absolute;left:22%;top:22%;width:56%;height:56%;fill:none;stroke:var(--pink);stroke-width:1.1;
+  stroke-linecap:round;stroke-linejoin:round;pointer-events:none;transition:stroke .4s;}
+.fp .scan{position:absolute;left:24%;right:24%;top:26%;height:3px;border-radius:3px;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,#ff5c8a,transparent);box-shadow:0 0 8px #ff5c8a;}
+.fp.holding .disc{transform:scale(.94);}
+.fp.holding .halo{transform:scale(1.2);}
+.fp.holding .scan{opacity:1;animation:scan .9s ease-in-out infinite alternate;}
+@keyframes scan{from{top:26%}to{top:70%}}
+.fp.ok .disc{background:linear-gradient(135deg,#ff8fa3,#ff5c8a);}
+.fp.ok .icon{stroke:#fff;}
+.fp.ok .scan{opacity:0;animation:none;}
+.fp.ok .halo{animation:none;transform:scale(1.5);opacity:0;transition:transform .6s,opacity .6s;}
+
+/* ---------- Màn 2: bó hoa ---------- */
+#bouquetWrap{cursor:pointer;width:min(320px,78vw);animation:sway 4.5s ease-in-out infinite;transform-origin:50% 100%;
+  transition:opacity .6s,filter .6s;}
+#bouquetWrap img,#bouquetWrap svg{width:100%;height:auto;display:block;pointer-events:none;filter:drop-shadow(0 12px 18px rgba(255,92,138,.3));}
+@keyframes sway{0%,100%{transform:rotate(-1.8deg) scale(1)}50%{transform:rotate(1.8deg) scale(1.03)}}
+#hint{margin-top:14px;font-size:16px;font-weight:600;color:var(--pink);opacity:.7;}
+#bouquet.dim #bouquetWrap{opacity:.35;filter:blur(3px);}
+#bouquet.dim #hint{opacity:0;}
+#cardLayer{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden;}
+.card{position:absolute;background:#fff;border:2px solid var(--pink-pale);border-radius:18px;
+  box-shadow:0 8px 20px rgba(255,92,138,.22);display:flex;align-items:center;justify-content:center;
+  overflow:hidden;opacity:0;will-change:transform,opacity;}
+.card img{width:88%;height:88%;object-fit:contain;}
+.card span{font-size:56%;line-height:1;}
+
+/* ---------- Màn 3: hộp thư ---------- */
+#letter{background:rgba(201,160,168,.55);z-index:5;}
+#letterBox{width:min(440px,92vw);padding:30px 26px 24px;text-align:center;transform:scale(.85);transition:transform .6s cubic-bezier(.2,1.2,.4,1);}
+#letter.show #letterBox{transform:scale(1);}
+#letterBox h2{font-size:26px;line-height:1.25;min-height:2.5em;}
+#letterText{margin:14px 0 20px;font-size:18px;line-height:1.6;font-weight:600;color:var(--brown);text-align:left;min-height:6em;}
+.cursor{display:inline-block;width:2px;height:1.1em;background:var(--pink);margin-left:2px;vertical-align:-.15em;animation:blink 1s steps(1) infinite;}
+@keyframes blink{50%{opacity:0}}
+#closeBtn{border:0;border-radius:999px;padding:10px 34px;font:800 18px var(--font);color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,#ff8fa3,#ff5c8a);box-shadow:0 6px 16px rgba(255,92,138,.4);
+  opacity:0;pointer-events:none;transition:opacity .5s,transform .12s;}
+#closeBtn.show{opacity:1;pointer-events:auto;}
+#closeBtn:active{transform:scale(.92);}
+
+/* ---------- Nút nhạc ---------- */
+#musicBtn{position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:10;border:1px solid rgba(255,255,255,.8);
+  border-radius:999px;padding:8px 16px;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  color:var(--pink);font:800 13px var(--font);cursor:pointer;box-shadow:0 4px 12px rgba(255,92,138,.2);}
+@media (prefers-reduced-motion:reduce){#bouquetWrap{animation:none}}
+</style>
+</head>
+<body>
+
+<canvas id="fx"></canvas>
+
+<!-- Màn 1: vân tay -->
+<section id="lock" class="screen show">
+  <div id="lockBox" class="glass">
+    <h1>Chạm vân tay nha</h1>
+    <p id="lockSub">Ấn giữ để mở quà</p>
+    <button id="fp" class="fp" type="button" aria-label="Ấn giữ vân tay để mở quà">
+      <span class="halo"></span><span class="disc"></span>
+      <svg class="ring" viewBox="0 0 150 150"><circle class="bar" cx="75" cy="75" r="70"/></svg>
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+        <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+        <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+        <path d="M2 12a10 10 0 0 1 18-6"/>
+        <path d="M2 16h.01"/>
+        <path d="M21.8 16c.2-2 .131-5.354 0-6"/>
+        <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/>
+        <path d="M8.65 22c.21-.66.45-1.32.57-2"/>
+        <path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>
+      </svg>
+      <span class="scan"></span>
+    </button>
+  </div>
+</section>
+
+<!-- Màn 2: bó hoa -->
+<section id="bouquet" class="screen">
+  <div id="bouquetWrap"></div>
+  <div id="hint">Chạm vào bó hoa nhé 💐</div>
+</section>
+
+<div id="cardLayer"></div>
+
+<!-- Màn 3: hộp thư -->
+<section id="letter" class="screen">
+  <div id="letterBox" class="glass">
+    <h2>Tặng Hân nìii<br>20/10 vui vẻ nhaaa:'3</h2>
+    <div id="letterText"></div>
+    <button id="closeBtn" type="button">Đóng</button>
+  </div>
+</section>
+
+<button id="musicBtn" type="button">Play Music</button>
+<audio id="bgm" loop preload="auto"></audio>
+
+<script>
+/* =====================================================
+   CẤU HÌNH – chỉnh ở đây
+   ===================================================== */
+// Đường dẫn tài nguyên (đặt cùng thư mục với index.html)
+const ASSETS = {
+  bouquet: "bouquet.png",
+  bunny:   "bunny.png",
+  music:   "music.mp3"
+};
+
+// Thời gian ấn giữ vân tay để mở quà (mili giây)
+const HOLD_MS = 1500;
+
+// Nội dung thư
+const LETTER_TEXT = "Chúc Hân 20/10 thật hạnh phúc nhé! Mong rằng mỗi ngày trôi qua Hân đều được thương yêu và trân trọng . Dù ngoài kia có nhiều sóng gió thế nào,cuộc sống khó khăn ra sao thì Hân vẫn cố gắng lên đừng nản lòng nha.Chúc Hân 20/10 vui vẻ nhennn<3<3 :33";
+
+// Thời gian (mili giây) hiển thị thẻ thỏ trước khi quay lại màn nhập mật khẩu
+const CARD_PHASE_MIN = 100000, CARD_PHASE_MAX = 150000;
+const TYPE_SPEED = 55; // tốc độ gõ chữ (ms / ký tự)
+
+/* =====================================================
+   TIỆN ÍCH
+   ===================================================== */
+const $ = id => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+function show(id){ $(id).classList.add("show"); }
+function hide(id){ $(id).classList.remove("show"); }
+
+/* =====================================================
+   NHẠC NỀN
+   ===================================================== */
+const bgm = $("bgm"), musicBtn = $("musicBtn");
+bgm.src = ASSETS.music;
+musicBtn.addEventListener("click", () => {
+  if (bgm.paused) {
+    bgm.play().then(() => musicBtn.textContent = "Pause Music").catch(() => {});
+  } else {
+    bgm.pause(); musicBtn.textContent = "Play Music";
+  }
+});
+
+/* =====================================================
+   HIỆU ỨNG NỀN: cánh hoa rơi + chấm sáng
+   ===================================================== */
+const cv = $("fx"), ctx = cv.getContext("2d");
+let W, H, petals = [], sparks = [], petalCount = 22;
+function resize(){
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * d; cv.height = H * d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+addEventListener("resize", resize); resize();
+
+function newPetal(top){
+  return { x: rand(0, W), y: top ? rand(-H * .2, -10) : rand(0, H), s: rand(7, 15),
+    vy: rand(.5, 1.4), sw: rand(.5, 1.5), ph: rand(0, 6.28), r: rand(0, 6.28), vr: rand(-.03, .03),
+    c: Math.random() < .5 ? "#ff9bb5" : "#ffc2d3" };
+}
+function newSpark(){
+  return { x: rand(0, W), y: rand(0, H), r: rand(1.5, 3.5), vx: rand(-.2, .2), vy: rand(-.35, -.08), ph: rand(0, 6.28) };
+}
+for (let i = 0; i < 26; i++) sparks.push(newSpark());
+
+function frame(t){
+  ctx.clearRect(0, 0, W, H);
+  while (petals.length < petalCount) petals.push(newPetal(petals.length > 5));
+  for (const p of petals){
+    p.y += p.vy; p.x += Math.sin(t / 900 + p.ph) * p.sw; p.r += p.vr;
+    if (p.y > H + 20){ Object.assign(p, newPetal(true)); }
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.globalAlpha = .85;
+    ctx.beginPath(); ctx.ellipse(0, 0, p.s, p.s * .55, 0, 0, 6.28); ctx.fill(); ctx.restore();
+  }
+  for (const s of sparks){
+    s.x += s.vx; s.y += s.vy;
+    if (s.y < -10){ s.y = H + 10; s.x = rand(0, W); }
+    ctx.globalAlpha = .35 + .35 * Math.sin(t / 700 + s.ph);
+    ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =====================================================
+   MÀN 1: VÂN TAY – ấn giữ để mở quà
+   ===================================================== */
+const fp = $("fp"), bar = fp.querySelector(".bar");
+const CIRC = 2 * Math.PI * 70;
+bar.style.strokeDasharray = CIRC;
+let prog = 0, holding = false, opened = false, running = false, last = 0;
+function setProg(p){ bar.style.strokeDashoffset = CIRC * (1 - p); }
+setProg(0);
+
+function loop(t){
+  const dt = Math.min(t - last, 50); last = t;
+  prog += holding ? dt / HOLD_MS : -dt / 400;   // thả tay sớm thì vòng tròn tự lùi về
+  prog = Math.max(0, Math.min(1, prog));
+  setProg(prog);
+  if (prog >= 1){ running = false; return unlock(); }
+  if (holding || prog > 0) requestAnimationFrame(loop); else running = false;
+}
+function startHold(e){
+  if (opened) return;
+  if (e && e.preventDefault) e.preventDefault();
+  holding = true; fp.classList.add("holding");
+  if (!running){ running = true; last = performance.now(); requestAnimationFrame(loop); }
+}
+function endHold(){ holding = false; fp.classList.remove("holding"); }
+function unlock(){
+  opened = true; holding = false;
+  fp.classList.remove("holding"); fp.classList.add("ok");
+  if (navigator.vibrate) navigator.vibrate(40);
+  setTimeout(() => { hide("lock"); setTimeout(() => show("bouquet"), 500); }, 600);
+}
+function resetFp(){
+  opened = false; holding = false; running = false; prog = 0; setProg(0);
+  fp.classList.remove("ok", "holding");
+}
+fp.addEventListener("pointerdown", startHold);
+["pointerup", "pointercancel", "pointerleave"].forEach(ev => fp.addEventListener(ev, endHold));
+fp.addEventListener("contextmenu", e => e.preventDefault());
+fp.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) startHold(e); });
+fp.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") endHold(); });
+
+/* =====================================================
+   MÀN 2: BÓ HOA (ảnh PNG; nếu chưa có thì vẽ SVG tạm)
+   ===================================================== */
+const FALLBACK_SVG = `<svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+  <path d="M100 130 L100 230" stroke="#6bbf7a" stroke-width="6" stroke-linecap="round"/>
+  <path d="M70 120 L92 225 M130 120 L108 225" stroke="#6bbf7a" stroke-width="5" stroke-linecap="round"/>
+  <path d="M100 215 C60 190 40 160 52 140 C75 160 90 180 100 215Z M100 215 C140 190 160 160 148 140 C125 160 110 180 100 215Z" fill="#8fd49c"/>
+  <g><ellipse cx="68" cy="105" rx="22" ry="30" fill="#ff8fb0"/><path d="M52 90 Q68 70 84 90 Q68 100 52 90Z" fill="#ff6f9a"/></g>
+  <g><ellipse cx="132" cy="105" rx="22" ry="30" fill="#ffffff" stroke="#ffd0dc" stroke-width="2"/><path d="M116 90 Q132 70 148 90 Q132 100 116 90Z" fill="#ffe3ea"/></g>
+  <g><ellipse cx="100" cy="82" rx="26" ry="36" fill="#ff7aa5"/><path d="M80 62 Q100 38 120 62 Q100 74 80 62Z" fill="#ff5c8a"/></g>
+  <path d="M60 200 L100 240 L140 200 L128 165 L72 165Z" fill="#ffd6e0" stroke="#fff" stroke-width="3"/>
+  <path d="M88 225 Q100 240 112 225 Q100 232 88 225Z" fill="#ff5c8a"/>
+</svg>`;
+const bw = $("bouquetWrap");
+const bimg = new Image();
+bimg.alt = "Bó hoa tulip"; bimg.draggable = false;
+bimg.onerror = () => { bw.innerHTML = FALLBACK_SVG; };
+bimg.src = ASSETS.bouquet;
+bw.appendChild(bimg);
+bw.addEventListener("click", openLetter);
+
+/* =====================================================
+   MÀN 3: HỘP THƯ + HIỆU ỨNG GÕ CHỮ
+   ===================================================== */
+let typer = null;
+function openLetter(){
+  if ($("letter").classList.contains("show")) return;
+  $("bouquet").classList.add("dim");
+  const box = $("letterText"), btn = $("closeBtn");
+  box.innerHTML = ""; btn.classList.remove("show");
+  const txt = document.createTextNode(""), cur = document.createElement("span");
+  cur.className = "cursor"; box.append(txt, cur);
+  show("letter");
+  let i = 0;
+  clearInterval(typer);
+  setTimeout(() => {
+    typer = setInterval(() => {
+      txt.data = LETTER_TEXT.slice(0, ++i);
+      if (i >= LETTER_TEXT.length){ clearInterval(typer); btn.classList.add("show"); }
+    }, TYPE_SPEED);
+  }, 600);
+}
+$("closeBtn").addEventListener("click", () => {
+  clearInterval(typer);
+  hide("letter"); $("bouquet").classList.remove("dim");
+  startCards();
+});
+
+/* =====================================================
+   MÀN 4: THẺ THỎ BAY LƠ LỬNG, SAU ĐÓ QUAY LẠI MÀN 1
+   ===================================================== */
+let cardTimer = null, cardEnd = null, cardsOn = false, targetCards = 5;
+function spawnCard(){
+  const size = rand(70, 140);
+  const el = document.createElement("div");
+  el.className = "card"; el.style.width = el.style.height = size + "px";
+  const img = new Image(); img.alt = ""; img.draggable = false;
+  img.onerror = () => { img.remove(); el.innerHTML = "<span>🐰</span>"; el.style.fontSize = size + "px"; };
+  img.src = ASSETS.bunny; el.appendChild(img);
+  // Vị trí ngẫu nhiên quanh bó hoa (giữa màn hình)
+  const ang = rand(0, 6.28), rx = Math.min(W * .42, 260), ry = Math.min(H * .34, 260);
+  const x = W / 2 + Math.cos(ang) * rand(.55, 1) * rx - size / 2;
+  const y = H / 2 + Math.sin(ang) * rand(.55, 1) * ry - size / 2;
+  el.style.left = x + "px"; el.style.top = y + "px";
+  $("cardLayer").appendChild(el);
+  const rot = rand(-18, 18), dur = rand(5000, 8000), drift = rand(-40, 40);
+  const anim = el.animate([
+    { opacity: 0, transform: `translate(0,12px) rotate(${rot}deg) scale(.8)` },
+    { opacity: 1, offset: .2, transform: `translate(${drift * .3}px,-10px) rotate(${rot}deg) scale(1)` },
+    { opacity: 1, offset: .65 },
+    { opacity: 0, transform: `translate(${drift}px,-${rand(50, 90)}px) rotate(${rot + rand(-8, 8)}deg) scale(1.03)` }
+  ], { duration: dur, easing: "ease-in-out", fill: "forwards" });
+  anim.onfinish = () => el.remove();
+}
+function startCards(){
+  cardsOn = true; targetCards = 5;
+  cardTimer = setInterval(() => {
+    if (!cardsOn) return;
+    if ($("cardLayer").children.length < targetCards) spawnCard();
+    if (Math.random() < .05) targetCards = 4 + Math.floor(Math.random() * 3); // 4–6 thẻ
+  }, 600);
+  for (let k = 0; k < 3; k++) setTimeout(spawnCard, k * 250);
+  cardEnd = setTimeout(restart, rand(CARD_PHASE_MIN, CARD_PHASE_MAX));
+}
+function restart(){
+  cardsOn = false; clearInterval(cardTimer);
+  hide("bouquet");
+  [...$("cardLayer").children].forEach(c => c.animate([{opacity: 1}, {opacity: 0}], {duration: 600, fill: "forwards"}));
+  setTimeout(() => {
+    $("cardLayer").innerHTML = "";
+    resetFp();
+    petalCount = Math.min(petalCount + 10, 50); // cánh hoa rơi dày hơn mỗi vòng
+    show("lock");
+  }, 700);
+}
+</script>
+</body>
+</html>
